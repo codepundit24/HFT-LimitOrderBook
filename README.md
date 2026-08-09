@@ -21,7 +21,7 @@ To compile and run this project on your local machine, ensure you have CMake and
 
 ```bash
 # 1. Clone the repository
-git clone [https://github.com/YOUR_USERNAME/HFT-LimitOrderBook.git](https://github.com/YOUR_USERNAME/HFT-LimitOrderBook.git)
+git clone [https://github.com/codepundit24/HFT-LimitOrderBook.git](https://github.com/codepundit24/HFT-LimitOrderBook.git)
 cd HFT-LimitOrderBook
 
 # 2. Create a build directory
@@ -35,3 +35,23 @@ cmake --build .
 # 4. Run the engine
 ./LimitOrderBook.exe    # For Windows
 ./LimitOrderBook        # For Linux/macOS
+
+
+📊 Sample Execution Output
+
+--- CURRENT ORDER BOOK ---
+ASKS (Sell Side):
+BIDS (Buy Side):
+  $148 => [ (ID:101 Qty:50) (ID:102 Qty:100) (ID:103 Qty:75) ]
+--------------------------
+
+Cancelling Order ID 102
+>>> ORDER CANCELLED: ID 102 <<<
+
+Incoming Sell Order for 80 shares @ $148
+
+>>> MATCH EXECUTED <<<
+Traded Quantity: 50 @ price: $148 (Buyer ID: 101, Seller ID: 201)
+
+>>> MATCH EXECUTED <<<
+Traded Quantity: 30 @ price: $148 (Buyer ID: 103, Seller ID: 201)
