@@ -1,36 +1,41 @@
 #include <iostream>
+#include <chrono>
 #include "OrderBook.h"
 #include "OrderPool.h"
 
 int main(){
-    OrderPool pool(100000);
+    const int NUM_ORDERS = 1000000;
+    OrderPool pool(NUM_ORDERS +10);
     OrderBook book;
 
-    std::cout<<"--- Testing Intrusive Linked List & Queues ---"<<std::endl;
+    std::cout<<"--- HFT Engine Performance Benchmark ---"<<std::endl;
+    std::cout<<" Generating and matching "<<NUM_ORDERS<<" orders..." <<std::endl;
+    std::cout<<"-Please wait..."<<std::endl;
 
-    //3 order placed at same price 
-    Order* buy1= pool.allocate(101, OrderType::BUY, 148, 50, 1001);
-    Order* buy2= pool.allocate(102, OrderType::BUY, 148, 100, 1002);
-    Order* buy3= pool.allocate(103, OrderType::BUY, 148, 75, 1003);
+    auto start = std::chrono::high_resolution_clock::now();
 
-    book.addOrder(buy1);
-    book.addOrder(buy2);
-    book.addOrder(buy3);
+    for (int i=0; i < NUM_ORDERS; i++){
+        OrderType side = (i % 2 ==0) ? OrderType::BUY : OrderType::SELL;
 
-    std::cout<<"\nAfter adding 3 Bids at $148"<<std::endl;
-    book.printBook();
+        double price = 150 + (i % 5);
 
-    std::cout<<"\nCancelling Order ID 102"<<std::endl;
-    book.cancelOrder(102);
+        uint32_t qty = 10 + (i % 100);
 
-    book.printBook();
+        Order* order = pool.allocate(i + 1,side, price, qty,i);
+        book.addOrder(order);
+    }
 
-    Order* sell1= pool.allocate(201, OrderType::SELL, 148, 80, 1004);
-    std::cout<<"\nIncoming Sell Order for 80 shares @ $148 "<<std::endl;
-    book.addOrder(sell1);
+    auto end = std::chrono::high_resolution_clock::now();
 
-    book.printBook();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    double seconds = duration.count() / 1000;
 
+    std::cout<<"\n>>> Benchmark Complete! <<<" <<std::endl;
+    std::cout<<"Total time taken: "<< duration.count() << "ms ("<<seconds<<"seconds)" <<std::endl;
+
+    if(seconds >0){
+        std::cout<<"Speed: "<<(NUM_ORDERS /seconds) <<" Orders per seconds! "<<std::endl;
+    }
 
     return 0;
 }

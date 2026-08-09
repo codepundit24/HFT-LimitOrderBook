@@ -19,7 +19,7 @@ void OrderBook::cancelOrder(uint64_t orderId){
     //Check if order is exist or not
     auto it = orderLookup.find(orderId);
     if(it == orderLookup.end()){
-        std::cout<< "Order ID "<<orderId<<" not found for cancellation."<<std::endl;
+        // std::cout<< "Order ID "<<orderId<<" not found for cancellation."<<std::endl;
         return;
     }
 
@@ -41,7 +41,7 @@ void OrderBook::cancelOrder(uint64_t orderId){
     //remove the lookup
     orderLookup.erase(orderId);
 
-    std::cout<<">>> ORDER CANCELLED: ID "<<orderId<<" <<<"<<std::endl;
+    // std::cout<<">>> ORDER CANCELLED: ID "<<orderId<<" <<<"<<std::endl;
 }
 
 
@@ -63,11 +63,11 @@ void OrderBook::matchOrders(){
 
             uint32_t tradedQty = std::min(buyOrder->quantity,sellOrder->quantity);
 
-            std::cout << "\n>>> MATCH EXECUTED <<<" << std::endl;
-            std::cout << "Traded Quantity: "<< tradedQty
-                      << " @ price: $" << sellOrder->price
-                      << " (Buyer ID: "<<buyOrder->orderId
-                      << ", Seller ID: "<<sellOrder->orderId<<")" << std::endl;
+            // std::cout << "\n>>> MATCH EXECUTED <<<" << std::endl;
+            // std::cout << "Traded Quantity: "<< tradedQty
+            //           << " @ price: $" << sellOrder->price
+            //           << " (Buyer ID: "<<buyOrder->orderId
+            //           << ", Seller ID: "<<sellOrder->orderId<<")" << std::endl;
             
             buyOrder->quantity -= tradedQty;
             sellOrder->quantity -= tradedQty;
