@@ -1,42 +1,87 @@
 #include "OrderBook.h"
 
 void OrderBook::addOrder(Order* order){
-    if(order->side == OrderType::BUY){
-        bids[order->price] = order;
-    }else{
-        asks[order->price] = order;
-    }
+    //Put the order in lookup for fast cancel 
     orderLookup[order->orderId] = order;
+
+    //Keep the order in it's price queue at last
+    if(order->side == OrderType::BUY){
+        bids[order->price].append(order);
+    }else{
+        asks[order->price].append(order);
+    }
 
     //After new order, matching logic triggered
     matchOrders();
 }
 
+void OrderBook::cancelOrder(uint64_t orderId){
+    //Check if order is exist or not
+    auto it = orderLookup.find(orderId);
+    if(it == orderLookup.end()){
+        std::cout<< "Order ID "<<orderId<<" not found for cancellation."<<std::endl;
+        return;
+    }
+
+    Order* order = it->second;
+
+    //Take out the order from it's doubly linked list 
+    if(order->side == OrderType::BUY){
+        bids[order->price].remove(order);
+        if(bids[order->price].isEmpty()){
+            bids.erase(order->price);
+        }
+    }else{
+        asks[order->price].remove(order);
+        if(asks[order->price].isEmpty()){
+            asks.erase(order->price);
+        }
+    }
+
+    //remove the lookup
+    orderLookup.erase(orderId);
+
+    std::cout<<">>> ORDER CANCELLED: ID "<<orderId<<" <<<"<<std::endl;
+}
+
+
 void OrderBook::matchOrders(){
     while(!bids.empty() && !asks.empty()){
-        auto bestBid = bids.begin();
-        auto bestAsk = asks.begin();
+        auto bestBidIt = bids.begin();
+        auto bestAskIt = asks.begin();
+
+        double bestBidPrice = bestBidIt->first;
+        double bestAskPrice = bestAskIt->first;
 
         //Check if Buy Price >= Sell Price
-        if(bestBid->first >= bestAsk->first){
-            Order* buyOrder = bestBid->second;
-            Order* sellOrder = bestAsk->second;
+        if(bestBidPrice >= bestAskPrice){
+            OrderList& bidQueue = bestBidIt->second;
+            OrderList& askQueue = bestAskIt->second;
+
+            Order* buyOrder = bidQueue.head;
+            Order* sellOrder = askQueue.head;
 
             uint32_t tradedQty = std::min(buyOrder->quantity,sellOrder->quantity);
 
             std::cout << "\n>>> MATCH EXECUTED <<<" << std::endl;
             std::cout << "Traded Quantity: "<< tradedQty
-                      << " @ price: $" << sellOrder->price << std::endl;
+                      << " @ price: $" << sellOrder->price
+                      << " (Buyer ID: "<<buyOrder->orderId
+                      << ", Seller ID: "<<sellOrder->orderId<<")" << std::endl;
             
             buyOrder->quantity -= tradedQty;
             sellOrder->quantity -= tradedQty;
 
             //Fill status hanlde 
             if(buyOrder->quantity == 0){
-                bids.erase(bestBid);
+                bidQueue.remove(buyOrder);
+                orderLookup.erase(buyOrder->orderId);
+                if(bidQueue.isEmpty()) bids.erase(bestBidIt);
             }
             if(sellOrder->quantity== 0){
-                asks.erase(bestAsk);
+                askQueue.remove(sellOrder);
+                orderLookup.erase(sellOrder->orderId);
+                if(askQueue.isEmpty()) asks.erase(bestAskIt);
             }
         }else{
             break; // Matching price can't found
@@ -47,11 +92,25 @@ void OrderBook::matchOrders(){
 void OrderBook::printBook() const{
     std::cout << "\n--- CURRENT ORDER BOOK ---"<< std::endl;
     std::cout << "ASKS (Sell Side):"<< std::endl;
-    for (const auto& [price,order] : asks){
-        std::cout << "  $"<< price<<" | Qty: "<<order->quantity <<std::endl;
+    for (auto it=asks.rbegin(); it != asks.rend(); ++it){
+        Order* current = it->second.head;
+        std::cout<<"  $"<<it->first<<" -> [ ";
+        while (current !=nullptr){
+            std::cout<<"(ID: "<<current->orderId<<" Qty:"<<current->quantity<<") ";
+            current = current->next;
+        }
+        std::cout<<"]"<<std::endl;
     }
     std::cout <<" BIDS (Buy Side):"<<std::endl;
-    for (const auto& [price,order] : bids){
-        std::cout<<"  $"<<price<<" | Qty: "<<order->quantity << std::endl;
+    for (const auto& [price,orderList] : bids){
+        Order* current = orderList.head;
+        std::cout<<"  $"<<price<<" => [ ";
+        while (current != nullptr)
+        {
+            std::cout<<"(ID:"<<current->orderId<<"Qty:"<<current->quantity<<") ";
+            current = current->next;
+        }
+        std::cout<<"]"<<std::endl;
     }
+    std::cout<<"-----------------------------\n"<<std::endl;
 }
