@@ -2,3 +2,4 @@ build/
 *.exe
 *.out
 .vscode/
+include/pybind11/

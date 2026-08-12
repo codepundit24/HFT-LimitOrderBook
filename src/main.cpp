@@ -1,41 +1,25 @@
 #include <iostream>
-#include <chrono>
 #include "OrderBook.h"
 #include "OrderPool.h"
+#include "Server.h"
 
 int main(){
-    const int NUM_ORDERS = 1000000;
-    OrderPool pool(NUM_ORDERS +10);
-    OrderBook book;
 
-    std::cout<<"--- HFT Engine Performance Benchmark ---"<<std::endl;
-    std::cout<<" Generating and matching "<<NUM_ORDERS<<" orders..." <<std::endl;
-    std::cout<<"-Please wait..."<<std::endl;
+    std::cout<<"--- INITIALIZING HFT LIMIT ORDER BOOK & TCP SERVER---\n";
 
-    auto start = std::chrono::high_resolution_clock::now();
+    OrderPool orderPool(10000);
 
-    for (int i=0; i < NUM_ORDERS; i++){
-        OrderType side = (i % 2 ==0) ? OrderType::BUY : OrderType::SELL;
+    OrderBook orderBook;
 
-        double price = 150 + (i % 5);
+    int port = 8080;
+    Server server(port,orderBook,orderPool);
 
-        uint32_t qty = 10 + (i % 100);
-
-        Order* order = pool.allocate(i + 1,side, price, qty,i);
-        book.addOrder(order);
+    if (!server.start()){
+        std::cerr<< "Failed to start TCP server on port "<<port<<std::endl;
+        return 1;
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
-
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    double seconds = duration.count() / 1000;
-
-    std::cout<<"\n>>> Benchmark Complete! <<<" <<std::endl;
-    std::cout<<"Total time taken: "<< duration.count() << "ms ("<<seconds<<"seconds)" <<std::endl;
-
-    if(seconds >0){
-        std::cout<<"Speed: "<<(NUM_ORDERS /seconds) <<" Orders per seconds! "<<std::endl;
-    }
+    server.listenForConnections();
 
     return 0;
 }
