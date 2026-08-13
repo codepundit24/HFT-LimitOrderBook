@@ -8,21 +8,17 @@ Designed around zero-allocation memory principles and deterministic execution pi
 
 ## 🏛️ System Architecture
 
-┌─────────────────────────┐          HTTP / REST          ┌─────────────────────────┐
-│                         │ ────────────────────────────> │                         │
-│  React Trading Terminal │                               │   FastAPI Gateway       │
-│  (Port 3000)            │ <──────────────────────────── │   (Port 8000)           │
-└─────────────────────────┘          JSON Response        └────────────┬────────────┘
-│
-┌───────────────┴───────────────┐
-TCP Sockets                      SQLAlchemy
-│                               │
-▼                               ▼
-┌────────────────────────┐       ┌──────────────────────┐
-│  C++ Matching Engine   │       │  MySQL Audit Logs    │
-│  (Port 8080)           │       │  (Database)          │
-└────────────────────────┘       └──────────────────────┘
+```mermaid
+graph TD
+    UI["React Trading Terminal (Port 3000)"]
+    API["FastAPI Gateway (Port 8000)"]
+    CPP["C++ Matching Engine (Port 8080)"]
+    DB[("MySQL Audit Logs (Database)")]
 
+    UI -->|"HTTP / REST Requests"| API
+    API -->|"JSON Response"| UI
+    API -->|"TCP Sockets (Low-Latency)"| CPP
+    API -->|"SQLAlchemy ORM"| DB
 ---
 
 ## 🚀 Key Features
