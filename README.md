@@ -1,44 +1,118 @@
-# Low-Latency Limit Order Book (LOB) Engine
+# ⚡ Low-Latency HFT Limit Order Book & Trading Terminal
 
-A high-performance, low-latency Limit Order Book matching engine built in modern C++. Designed with High-Frequency Trading (HFT) system design principles to ensure ultra-fast order execution and deterministic memory management.
+A end-to-end, high-performance **High-Frequency Trading (HFT) Execution & Audit System**. Built with an ultra-fast **C++17 Matching Engine** core, an asynchronous **FastAPI Gateway**, persistent **MySQL Audit Logs**, and a modern **React Dark-Theme Trading Terminal**.
 
-## 🚀 Core Features & Architecture
+Designed around zero-allocation memory principles and deterministic execution pipelines.
 
-* **Price-Time Priority Matching:** Standard FIFO execution for both Bids and Asks. Partial order fills and balance updates are fully supported.
-* **$O(1)$ Memory Allocation:** Utilizes a custom **Slab Allocator (Memory Pool)** to pre-allocate memory for orders at startup. This completely bypasses the standard `new`/`delete` keywords, eliminating OS-level latency spikes during runtime.
-* **$O(1)$ Order Cancellation:** Implements an **Intrusive Doubly Linked List** within the order queues. This allows orders to be removed from the book instantly without any $O(N)$ loop traversal or search overhead.
-* **Fast Lookups:** `std::unordered_map` is used for constant-time $O(1)$ order ID lookups during the cancellation process.
+---
+
+## 🏛️ System Architecture
+
+┌─────────────────────────┐          HTTP / REST          ┌─────────────────────────┐
+│                         │ ────────────────────────────> │                         │
+│  React Trading Terminal │                               │   FastAPI Gateway       │
+│  (Port 3000)            │ <──────────────────────────── │   (Port 8000)           │
+└─────────────────────────┘          JSON Response        └────────────┬────────────┘
+│
+┌───────────────┴───────────────┐
+TCP Sockets                      SQLAlchemy
+│                               │
+▼                               ▼
+┌────────────────────────┐       ┌──────────────────────┐
+│  C++ Matching Engine   │       │  MySQL Audit Logs    │
+│  (Port 8080)           │       │  (Database)          │
+└────────────────────────┘       └──────────────────────┘
+
+---
+
+## 🚀 Key Features
+
+* **C++ Core Engine (Microsecond Latency):**
+  * **Price-Time Priority (FIFO):** Execution logic for LIMIT and Stop-Loss orders (`SL_STOP_LIMIT`, `SL_STOP_MARKET`).
+  * **$O(1)$ Slab Allocator:** Memory Pool pre-allocates memory for order structures at startup, eliminating runtime OS heap allocations (`new`/`delete`) and preventing latency spikes.
+  * **$O(1)$ Order Cancellation:** Intrusive Doubly Linked Lists allow instant node removals from queues without $O(N)$ traversals.
+  * **TCP Socket IPC:** Custom binary/TCP socket protocol for instant inter-process communication with the API Gateway.
+
+* **FastAPI Gateway & Persistence:**
+  * Asynchronous REST API routing.
+  * Auto audit logging to **MySQL** via SQLAlchemy for regulatory-style tracking.
+  * Cross-Origin Resource Sharing (CORS) enabled for seamless UI integration.
+
+* **React Dashboard UI:**
+  * Sleek, high-contrast Dark Mode Trading Terminal.
+  * Real-time order placement form with dynamic field switching (LIMIT, SL-Limit, SL-Market).
+  * Scrollable Audit Log table with sticky headers for real-time order history tracking.
+
+---
 
 ## 🛠️ Tech Stack
 
-* **Language:** C++17
-* **Build System:** CMake
-* **Environment:** GCC/MinGW (Windows) / Clang (macOS) / GCC (Linux)
+| Layer | Technology |
+| :--- | :--- |
+| **Engine Core** | C++17, TCP Sockets, Custom Memory Pools |
+| **Build System** | CMake, GCC / MinGW |
+| **Backend API** | Python 3.10+, FastAPI, Uvicorn, SQLAlchemy |
+| **Database** | MySQL Server |
+| **Frontend UI** | React.js, Axios, Modern CSS3 |
 
-## ⚙️ Build and Run Instructions
+---
 
-To compile and run this project on your local machine, ensure you have CMake and a C++17 compatible compiler installed.
+## ⚙️ Project Setup & Installation
+
+### 1. Prerequisites
+Ensure you have installed:
+* **GCC/MinGW** (C++17 support)
+* **CMake** (v3.10+)
+* **Python 3.10+** & **MySQL Database**
+* **Node.js** (v16+) & **npm**
+
+---
+
+### 2. Build & Run C++ Engine
 
 ```bash
-# 1. Clone the repository
+# Clone the repository
 git clone [https://github.com/codepundit24/HFT-LimitOrderBook.git](https://github.com/codepundit24/HFT-LimitOrderBook.git)
 cd HFT-LimitOrderBook
 
-# 2. Create a build directory
-mkdir build
-cd build
-
-# 3. Generate build files and compile
+# Create build directory and compile
+mkdir build && cd build
 cmake ..
 cmake --build .
 
-# 4. Run the engine
-./LimitOrderBook.exe    # For Windows
-./LimitOrderBook        # For Linux/macOS
-
+# Launch Engine Socket Server
+./LimitOrderBook.exe      # Windows
+./LimitOrderBook          # Linux/macOS
 ```
 
-## 📊 Sample Execution Output
+
+## 3. Setup FastAPI Backend
+In a new terminal (Root directory):
+
+```bash
+# Install Python dependencies
+pip install fastapi uvicorn sqlalchemy pymysql
+
+# Start FastAPI Server
+uvicorn main:app --reload
+```
+
+## 4. Setup React Dashboard UI
+In a new terminal (Root directory):
+
+```bash
+# Navigate to frontend folder
+cd frontend
+
+# Install Node modules
+npm install
+
+# Start React Terminal
+npm start
+```
+Access the UI Dashboard at http://localhost:3000 
+
+## 📊 Sample Execution Logs
 
 --- CURRENT ORDER BOOK ---
 ASKS (Sell Side):
@@ -46,13 +120,8 @@ BIDS (Buy Side):
   $148 => [ (ID:101 Qty:50) (ID:102 Qty:100) (ID:103 Qty:75) ]
 --------------------------
 
-Cancelling Order ID 102
->>> ORDER CANCELLED: ID 102 <<<
-
-Incoming Sell Order for 80 shares @ $148
+>>> ORDER PROCESSED BY C++ ENGINE <<<
+Order Type: LIMIT | Side: BUY | Price: $148.0 | Qty: 50 | Status: PROCESSED
 
 >>> MATCH EXECUTED <<<
 Traded Quantity: 50 @ price: $148 (Buyer ID: 101, Seller ID: 201)
-
->>> MATCH EXECUTED <<<
-Traded Quantity: 30 @ price: $148 (Buyer ID: 103, Seller ID: 201)

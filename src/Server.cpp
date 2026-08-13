@@ -1,4 +1,5 @@
 #include "Server.h"
+#include <string>
 
 Server::Server(int p, OrderBook& book, OrderPool& pool) 
     : port(p), serverSocket(INVALID_SOCKET), orderBook(book), orderPool(pool), isRunning(false) {}
@@ -63,7 +64,44 @@ void Server::listenForConnections() {
         int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
         if (bytesReceived > 0) {
             buffer[bytesReceived] = '\0';
+            std::string message(buffer);
             std::cout << "Received data from client: " << buffer << std::endl;
+            
+            //Default values
+            OrderType oType =OrderType::LIMIT;
+            Side oSide = Side::BUY;
+            double price = 0;
+            double triggerPrice = 0;
+            uint32_t qty = 0;
+            uint64_t orderId = rand() % 100000;
+
+            if (message.find("STOP_LOSS") != std::string::npos){
+                oType = OrderType::STOP_LOSS;
+            }
+            
+            if (message.find("SELL") != std::string::npos){
+                oSide = Side::SELL;
+            }
+
+            size_t atPos = message.find('@');
+            size_t trigPos = message.find("Trigger:");
+            size_t qtyPos = message.find("Qty");
+
+            if (atPos != std::string::npos){
+                price = std::stod(message.substr(atPos + 1));
+            }
+            if (trigPos != std::string::npos){
+                triggerPrice = std::stod(message.substr(trigPos + 8));
+            }
+            if ( qtyPos != std::string::npos){
+                qty = static_cast<uint32_t>(std::stoi(message.substr(qtyPos + 4)));
+            }
+
+            Order* newOrder = orderPool.allocate(orderId,oSide,oType,price,triggerPrice,qty,time(nullptr));
+            if (newOrder){
+                orderBook.addOrder(newOrder);
+                std::cout<< "Order dynamically allocated and added to book successfully!\n";
+            }
             
             const char* response = "Order processed by C++ Engine\n";
             send(clientSocket, response, (int)strlen(response), 0);

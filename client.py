@@ -12,7 +12,7 @@ def test_tcp_client():
         client_socket.connect((host,port))
         print("Connected successfully to C++ Engine!")
 
-        message = "BUY ORDER: AAPL @150.5 Qty: 100"
+        message = "STOP_LOSS BUY ORDER: AAPL @150.5 Trigger: 148.0 Qty: 100"
         client_socket.sendall(message.encode('utf-8'))
         print(f"Sent to Server: {message}")
 

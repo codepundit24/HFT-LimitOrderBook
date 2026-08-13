@@ -4,8 +4,13 @@ void OrderBook::addOrder(Order* order){
     //Put the order in lookup for fast cancel 
     orderLookup[order->orderId] = order;
 
+    if (order->type == OrderType::STOP_LOSS){
+        stopLossOrders.push_back(order);
+        std::cout<<"Stop-Loss Order ID "<<order->orderId<< " added to pending list. \n";
+        return;
+    }
     //Keep the order in it's price queue at last
-    if(order->side == OrderType::BUY){
+    if(order->side == Side::BUY){
         bids[order->price].append(order);
     }else{
         asks[order->price].append(order);
@@ -15,6 +20,30 @@ void OrderBook::addOrder(Order* order){
     matchOrders();
 }
 
+
+void OrderBook::checkStopLossTriggers(double lastTradePrice){
+    //Iterate through pending stop-loss orders
+    for (auto it = stopLossOrders.begin(); it != stopLossOrders.end();){
+        Order* order = *it;
+        bool triggered = false;
+
+        if (order->side == Side::BUY && lastTradePrice >= order->trigger_price){
+            triggered = true;
+        }
+        else if (order->side == Side::SELL && lastTradePrice <= order->trigger_price){
+            triggered = true;
+        }
+        if (triggered){
+            std::cout << "Stop-Loss Triggered for Order ID "<< order->orderId
+                      << " at market price "<<lastTradePrice<< "!\n";
+            
+            order->type = OrderType::LIMIT;
+            addOrder(order);
+
+            it = stopLossOrders.erase(it);
+        }else ++it;
+    }
+}
 void OrderBook::cancelOrder(uint64_t orderId){
     //Check if order is exist or not
     auto it = orderLookup.find(orderId);
@@ -26,7 +55,7 @@ void OrderBook::cancelOrder(uint64_t orderId){
     Order* order = it->second;
 
     //Take out the order from it's doubly linked list 
-    if(order->side == OrderType::BUY){
+    if(order->side == Side::BUY){
         bids[order->price].remove(order);
         if(bids[order->price].isEmpty()){
             bids.erase(order->price);
@@ -68,6 +97,10 @@ void OrderBook::matchOrders(){
             //           << " @ price: $" << sellOrder->price
             //           << " (Buyer ID: "<<buyOrder->orderId
             //           << ", Seller ID: "<<sellOrder->orderId<<")" << std::endl;
+            
+            double executionPrice  = sellOrder->price;
+
+            checkStopLossTriggers(executionPrice);
             
             buyOrder->quantity -= tradedQty;
             sellOrder->quantity -= tradedQty;

@@ -3,6 +3,7 @@
 #include <map>
 #include <unordered_map>
 #include <iostream>
+#include <vector>
 #include "Order.h"
 
 
@@ -49,8 +50,11 @@ private:
     //Fast O(1) lookup for cancels/searches
     std::unordered_map<uint64_t,Order*> orderLookup;
 
+    std::vector<Order*> stopLossOrders;
+
 public:
     void addOrder(Order* order);
+    void checkStopLossTriggers(double lastTraderPrice);
     void cancelOrder(uint64_t orderId); 
     void matchOrders();
     void printBook() const;

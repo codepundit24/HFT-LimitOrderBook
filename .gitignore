@@ -1,5 +1,33 @@
+# C++ Build Artifacts
 build/
+bin/
 *.exe
 *.out
-.vscode/
+*.o
+*.obj
 include/pybind11/
+
+# Python & Virtual Environment
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+.env
+
+# React / Node Dependencies & Builds
+frontend/node_modules/
+frontend/build/
+frontend/.pnp
+frontend/.pnp.js
+frontend/coverage/
+
+# IDE & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

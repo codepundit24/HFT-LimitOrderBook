@@ -8,17 +8,26 @@ namespace py = pybind11;
 PYBIND11_MODULE(trading_engine, m) {
     m.doc() = "High-Frequency Trading Matching Engine Python Bindings";
 
-    // Expose OrderType Enum
-    py::enum_<OrderType>(m, "OrderType")
-        .value("BUY", OrderType::BUY)
-        .value("SELL", OrderType::SELL)
+    //Expose OrderType Enum
+    py::enum_<OrderType>(m,"OrderType")
+        .value("LIMIT",OrderType::LIMIT)
+        .value("MARKET",OrderType::MARKET)
+        .value("STOP_LOSS",OrderType::STOP_LOSS)
+        .export_values();
+
+    // Expose Side Enum
+    py::enum_<Side>(m, "Side")
+        .value("BUY", Side::BUY)
+        .value("SELL", Side::SELL)
         .export_values();
 
     // Expose Order class/struct
     py::class_<Order>(m, "Order")
         .def_readwrite("orderId", &Order::orderId)
+        .def_readwrite("type",&Order::type)
         .def_readwrite("side", &Order::side)
         .def_readwrite("price", &Order::price)
+        .def_readwrite("trigger_price",&Order::trigger_price)
         .def_readwrite("quantity", &Order::quantity);
 
     // Expose OrderPool class
