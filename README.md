@@ -19,6 +19,7 @@ graph TD
     API -->|"JSON Response"| UI
     API -->|"TCP Sockets (Low-Latency)"| CPP
     API -->|"SQLAlchemy ORM"| DB
+```
 ---
 
 ## 🚀 Key Features
